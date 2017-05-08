@@ -13,7 +13,7 @@ struct Album {
 
 let dstm = Album(title: "Dark Side of the Moon",
                  year: 1973,
-                 tracks: ["Time", "Money", "Brain Damage"])
+                 tracks: ["Time", "Money", "Brain Damage", "Eclipse"])
 
 let wywh = Album(title: "Wish You Were Here",
                  year: 1975,
@@ -23,16 +23,22 @@ let disco = [dstm, wywh]
 
 class MyTVC : UITableViewController {
 
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    print(">>> style: " + String(self.tableView.style.rawValue))
+  }
+
   override func numberOfSections(in tableView: UITableView) -> Int {
     return disco.count
   }
 
-  override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-    return disco[section].year.description
+  override func tableView(_ tableView: UITableView,titleForHeaderInSection section: Int) -> String? {
+    return disco[section].title
   }
 
-  override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-    return disco[section].title
+  override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+    return disco[section].year.description
   }
 
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -46,7 +52,7 @@ class MyTVC : UITableViewController {
   }
 }
 
-let rvc = MyTVC()
+let rvc = MyTVC(style: .grouped)
 rvc.title = "Table with Sections"
 
 let navController = UINavigationController(rootViewController: rvc)
