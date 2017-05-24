@@ -6,20 +6,24 @@ import PlaygroundSupport
 var str = "Hello, playground"
 
 struct Album {
-  let title: String
-  let year: Int
+  let title: String?
+  let year: Int?
   let tracks: [String]
 }
 
 let dstm = Album(title: "Dark Side of the Moon",
-                 year: 1973,
-                 tracks: ["Time", "Money", "Brain Damage", "Eclipse"])
+                 year: 1974,
+                 tracks: ["Time", "Money", "Brain Damage"])
 
 let wywh = Album(title: "Wish You Were Here",
                  year: 1975,
                  tracks: ["Crazy Diamond", "Wish you were here"])
 
-let disco = [dstm, wywh]
+let tw = Album(title: nil, //"The Wall",
+                 year: 1978,
+                 tracks: ["Comfortably Numb"])
+
+let disco = [dstm, wywh, tw]
 
 class MyTVC : UITableViewController {
 
@@ -27,19 +31,53 @@ class MyTVC : UITableViewController {
     super.viewDidLoad()
 
     print(">>> style: " + String(self.tableView.style.rawValue))
+
+//    self.tableView.sectionHeaderHeight = 50
+//    self.tableView.sectionFooterHeight = 50
+
+//    self.tableView.sectionHeaderHeight = CGFloat.leastNonzeroMagnitude
+    self.tableView.sectionFooterHeight = CGFloat.leastNonzeroMagnitude
+
+//    self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension 
+//    self.tableView.sectionFooterHeight = UITableViewAutomaticDimension
   }
 
   override func numberOfSections(in tableView: UITableView) -> Int {
     return disco.count
   }
 
-  override func tableView(_ tableView: UITableView,titleForHeaderInSection section: Int) -> String? {
-    return disco[section].title
-  }
+//  override func tableView(_ tableView: UITableView,titleForHeaderInSection section: Int) -> String? {
+//    return disco[section].title
+//  }
 
-  override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-    return disco[section].year.description
-  }
+//  override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+//    print(">>> getting header for section \(section)")
+//    if let title = disco[section].title {
+//      let view = UILabel()
+//      view.backgroundColor = .blue
+//      view.text = title
+//      return view
+//    }
+//    return nil
+//  }
+
+//  override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+//    if let year = disco[section].year {
+//      return year.description
+//    }
+//    return nil
+//  }
+
+//  override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+//    print(">>> getting footer for section \(section)")
+//    if let year = disco[section].year {
+//      let view = UILabel()
+//      view.backgroundColor = .red
+//      view.text = year.description
+//      return view
+//    }
+//    return nil
+//  }
 
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     return disco[section].tracks.count
