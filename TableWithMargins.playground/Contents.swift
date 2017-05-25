@@ -30,6 +30,8 @@ class MyTVC : UITableViewController {
 //
 //    self.tableView.layoutMargins.right = 100
 //    self.tableView.layoutMargins.left = 100
+
+//    self.tableView.layoutMargins = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 100)
   }
 
   override func numberOfSections(in tableView: UITableView) -> Int {
@@ -63,7 +65,11 @@ tvc.title = "Table with Sections"
 
 let navController = UINavigationController(rootViewController: tvc)
 
-let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 400, height: 500))
+// iPad Portrait
+//let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 768, height: 1024))
+
+// iPad Landscape
+let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
 window.rootViewController = navController
 window.makeKeyAndVisible()
 
