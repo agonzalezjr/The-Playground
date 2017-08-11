@@ -3,6 +3,29 @@
 import UIKit
 import PlaygroundSupport
 
+
+let d = Date()
+
+print("\(d)")
+
+print("\(Date()) - SAPMDCTracer - ")
+
+print("\(d.timeIntervalSince1970)")
+
+let d2 = Date()
+
+print("\(d2.timeIntervalSince1970)")
+
+let diff = d2.timeIntervalSince1970 - d.timeIntervalSince1970
+
+print("\(diff)")
+
+print("\(Date().timeIntervalSince(d) * 1000)")
+
+
+
+/*
+
 var str = "Hello, playground"
 
 struct Album {
@@ -109,3 +132,4 @@ window.makeKeyAndVisible()
 PlaygroundPage.current.liveView = window
 PlaygroundPage.current.needsIndefiniteExecution = true
 
+*/
