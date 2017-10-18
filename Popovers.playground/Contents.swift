@@ -21,32 +21,61 @@ let wywh = Album(title: "Wish You Were Here",
 
 let disco = [dstm, wywh]
 
-class MyTVC : UITableViewController {
+class MyTVC : UITableViewController, UIPopoverPresentationControllerDelegate {
 
   var actionButton: UIBarButtonItem?
   var toolButton: UIBarButtonItem?
 
+  var actionSheetButton: UIBarButtonItem?
+
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    actionButton = UIBarButtonItem(title: "Paop!", style: .plain, target: self, action: #selector(MyTVC.pop))
-    self.navigationItem.rightBarButtonItem  = actionButton
+    actionButton = UIBarButtonItem(title: "Pop!", style: .plain, target: self, action: #selector(MyTVC.pop))
+    self.navigationItem.rightBarButtonItem = actionButton
+
+    actionSheetButton = UIBarButtonItem(title: "Sheet!", style: .plain, target: self, action: #selector(MyTVC.menu))
+    self.navigationItem.leftBarButtonItem = actionSheetButton
 
     toolButton = UIBarButtonItem(title: "Pop!", style: .plain, target: self, action: #selector(MyTVC.pop))
     self.toolbarItems = [toolButton!]
     self.navigationController?.isToolbarHidden = false
   }
 
+
+  @objc
+  func menu(sender: UIView) {
+    print("sheet sent by \(sender)")
+
+    let alertController = UIAlertController(title: "Alert", message: "Message", preferredStyle: .actionSheet)
+
+    let action = UIAlertAction(title: "Action",
+                               style: .`default`,
+                               handler: { _ in
+      print("Action tapped")
+    })
+    alertController.addAction(action)
+
+    self.present(alertController, animated: true, completion: {
+      print("In present's completion block")
+    })
+
+    if let popController = alertController.popoverPresentationController {
+      popController.permittedArrowDirections = .any;
+      popController.barButtonItem = actionSheetButton
+      popController.delegate = self;
+    }
+  }
+
+  func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
+
+    print("Popover was dismissed")
+  }
+
   @objc
   func pop(sender: UIView) {
 
-    if let b = sender as? UIBarButtonItem {
-      
-    }
-
     print("popper sent by \(sender)")
-
-//    let controller = MyTVC(style: .grouped)
 
     let rvc = MyTVC(style: .grouped)
     rvc.title = "In Popover"
@@ -64,9 +93,8 @@ class MyTVC : UITableViewController {
     // configure the Popover presentation controller
     if let popController = controller.popoverPresentationController {
       popController.permittedArrowDirections = .any;
-    popController.barButtonItem = actionButton
-
-    popController.backgroundColor = controller.navigationBar.barTintColor
+      popController.barButtonItem = actionButton
+      popController.backgroundColor = controller.navigationBar.barTintColor
 //    popController.delegate = self;
     }
   }
