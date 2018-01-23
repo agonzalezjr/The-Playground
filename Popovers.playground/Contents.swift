@@ -52,7 +52,7 @@ class MyTVC : UITableViewController, UIPopoverPresentationControllerDelegate {
     let action = UIAlertAction(title: "Action",
                                style: .`default`,
                                handler: { _ in
-      print("Action tapped")
+      print("Action in sheet tapped")
     })
     alertController.addAction(action)
 
@@ -63,7 +63,7 @@ class MyTVC : UITableViewController, UIPopoverPresentationControllerDelegate {
     if let popController = alertController.popoverPresentationController {
       popController.permittedArrowDirections = .any;
       popController.barButtonItem = actionSheetButton
-      popController.delegate = self;
+//      popController.delegate = self;
     }
   }
 
