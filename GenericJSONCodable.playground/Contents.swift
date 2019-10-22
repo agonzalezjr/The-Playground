@@ -62,9 +62,26 @@ enum FieldType : String, Codable {
     case string
 }
 
+struct IntegrationPathComponent : Codable {
+    let propertyName: String?
+    let collectionIndex: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case propertyName = "property-name"
+        case collectionIndex = "collection-index"
+    }
+}
+
 struct Field : Codable {
     let type: FieldType
-    let fields: [String: Field]?
+    let fields: [String: Field]? // if it's a "group"
+    let integrationPath: [IntegrationPathComponent]? // if there is an integration
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case fields
+        case integrationPath = "integration-path"
+    }
 }
 
 struct IntegrationDataMapping : Codable {
@@ -103,7 +120,11 @@ func resolveFieldValues(fields: [String: Field]) -> [String: Any] {
     for (fieldName, field) in fields {
         switch field.type {
         case .string:
-            fieldValues[fieldName] = ""
+            if let integrationPath = field.integrationPath {
+                fieldValues[fieldName] = integrationPath.reduce("") { value, ipc in
+                    return value + (ipc.collectionIndex != nil ? "[\(ipc.collectionIndex!)]" : ipc.propertyName!) + "."
+                }
+            }
         case .group:
             if let groupFields = field.fields, groupFields.count > 0 {
                 fieldValues[fieldName] = resolveFieldValues(fields: groupFields)
