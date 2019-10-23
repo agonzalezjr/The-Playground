@@ -12,12 +12,6 @@ let testString = """
         "integration-data-mapping": {
             "$meta": { "status": "" },
             "fields": {
-                "pipe-to-soil-transition-section": { "type": "group", "fields": {} },
-                "pipe-condition-section": { "type": "group", "fields": {} },
-                "pipeline-exposure-section": { "type": "group", "fields": {} },
-                "pipe-supports-section": { "type": "group", "fields": {} },
-                "pipe-pentrations-section": { "type": "group", "fields": {} },
-                "std-form-footer": { "type": "group", "fields": {} },
                 "form-header-1": {
                     "type": "group",
                     "fields": {
@@ -75,12 +69,6 @@ struct IntegrationMetadata : Codable {
     let agentryObject: String
     let agentryObjectUidValue: String
     let agentryObjectUidProperty: String
-    
-    enum CodingKeys: String, CodingKey {
-        case agentryObject = "agentry-object"
-        case agentryObjectUidValue = "agentry-object-uid-value"
-        case agentryObjectUidProperty = "agentry-object-uid-property"
-    }
 }
 
 enum IntegrationType: String, Codable {
@@ -106,19 +94,23 @@ enum IntegrationPathDirective : String, Codable {
 
 struct IntegrationPathElement : Codable {
     
-    // #andytodo: Try the inner enum solution
-    
     let propertyName: String?
     let collectionIndex: Int?
     let agentryValue: String?
     let pathDirective: IntegrationPathDirective?
     
-    // #andytodo: See if we can remove this mapping
-    enum CodingKeys: String, CodingKey {
-        case propertyName = "property-name"
-        case collectionIndex = "collection-index"
-        case agentryValue = "agentry-value"
-        case pathDirective = "path-directive"
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        propertyName = try? container.decodeIfPresent(String.self, forKey: .propertyName)
+        collectionIndex = try? container.decodeIfPresent(Int.self, forKey: .collectionIndex)
+        agentryValue = try? container.decodeIfPresent(String.self, forKey: .agentryValue)
+        pathDirective = try? container.decodeIfPresent(IntegrationPathDirective.self, forKey: .pathDirective)
+        
+        guard propertyName != nil || collectionIndex != nil || agentryValue != nil || pathDirective != nil else {
+            let context = DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "At least one of the keys is required for the Integration Path Element")
+            throw DecodingError.dataCorrupted(context)
+        }
     }
 }
 
@@ -126,13 +118,8 @@ typealias IntegrationPath = [IntegrationPathElement]
 
 struct IntegrationConcatenationElement : Codable {
     
-    let contatenationString: String?
+    let concatenationString: String?
     let integrationPath: IntegrationPath?
-    
-    enum CodingKeys: String, CodingKey {
-        case contatenationString = "concatenation-string"
-        case integrationPath = "integration-path"
-    }
 }
 
 typealias IntegrationConcatenation = [IntegrationConcatenationElement]
@@ -145,13 +132,6 @@ struct Field : Codable {
     
     let integrationPath: IntegrationPath? // if there is an integration
     let integrationConcatenation: IntegrationConcatenation? // if there are multiple integrations
-    
-    enum CodingKeys: String, CodingKey {
-        case type
-        case fields
-        case integrationPath = "integration-path"
-        case integrationConcatenation = "integration-concatenation"
-    }
 }
 
 struct IntegrationDataMapping : Codable {
@@ -164,22 +144,17 @@ struct AgentryMapping : Codable {
     let integrationDataExchange: IntegrationDataExchange
     let integrationMetadata: IntegrationMetadata
     let integrationDataMapping: IntegrationDataMapping
-    
-    enum CodingKeys: String, CodingKey {
-        case integrationType = "integration-type"
-        case integrationDataExchange = "integration-data-exchange"
-        case integrationMetadata = "integration-metadata"
-        case integrationDataMapping = "integration-data-mapping"
-    }
 }
 
 enum AgentryDataMappingError: Error {
     case invalidMappingData
     case invalidMappingString
     case invalidMappingTarget
+    
+    case invalidIntegrationPathElement
+    case invalidIntegrationConcatenationElement(fieldName: String)
 }
 
-// #andytodo : return type here might not be a string!
 func resolveIntegrationPath(integrationPath: IntegrationPath) -> String {
     return integrationPath.reduce("") { value, ipc in
         var newTerm = ""
@@ -196,19 +171,21 @@ func resolveIntegrationPath(integrationPath: IntegrationPath) -> String {
     }
 }
 
-func resolveIntegrationConcatenation(integrationConcatenation: IntegrationConcatenation) -> String {
-    return integrationConcatenation.reduce("") { value, icc in
+func resolveIntegrationConcatenation(integrationConcatenation: IntegrationConcatenation) throws -> String {
+    return try integrationConcatenation.reduce("") { value, icc in
         var newTerm = ""
-        if let concatenationString = icc.contatenationString {
+        if let concatenationString = icc.concatenationString {
             newTerm = concatenationString
         } else if let integrationPath = icc.integrationPath {
             newTerm = resolveIntegrationPath(integrationPath: integrationPath)
+        } else {
+            throw AgentryDataMappingError.invalidIntegrationConcatenationElement(fieldName: "field-name-here")
         }
         return value + newTerm
     }
 }
 
-func resolveFieldValues(fields: [String: Field]) -> [String: Any] {
+func resolveFieldValues(fields: [String: Field]) throws -> [String: Any] {
     var fieldValues: [String: Any] = [:]
     for (fieldName, field) in fields {
         switch field.type {
@@ -216,15 +193,45 @@ func resolveFieldValues(fields: [String: Field]) -> [String: Any] {
             if let integrationPath = field.integrationPath {
                 fieldValues[fieldName] = resolveIntegrationPath(integrationPath: integrationPath)
             } else if let integrationConcatenation = field.integrationConcatenation {
-                fieldValues[fieldName] = resolveIntegrationConcatenation(integrationConcatenation: integrationConcatenation)
+                fieldValues[fieldName] = try resolveIntegrationConcatenation(integrationConcatenation: integrationConcatenation)
             }
         case .group:
             if let groupFields = field.fields, groupFields.count > 0 {
-                fieldValues[fieldName] = resolveFieldValues(fields: groupFields)
+                fieldValues[fieldName] = try resolveFieldValues(fields: groupFields)
             }
         }
     }
     return fieldValues
+}
+
+struct MappingCodingKeys : CodingKey {
+    
+    var stringValue: String
+    
+    init(stringValue: String) {
+        self.stringValue = stringValue
+    }
+    
+    var intValue: Int?
+    
+    init?(intValue: Int) {
+        return nil
+    }
+}
+
+func mappingKeys(_ keys : [CodingKey]) -> CodingKey {
+    let lastKey = keys.last!
+    if lastKey.intValue != nil {
+        return lastKey // It's an array key, we don't need to change anything
+    }
+    let stringKey = lastKey.stringValue
+    let keyParts = stringKey.split(separator: "-")
+    let newKey = keyParts.reduce("") { currentValue, nextElement in
+        // only capitalize after the first one
+        let path = currentValue == "" ? String(nextElement) : nextElement.capitalized
+        return currentValue + path
+    }
+    return MappingCodingKeys(stringValue: newKey)
 }
 
 func doIt() throws {
@@ -235,14 +242,12 @@ func doIt() throws {
     }
 
     let decoder = JSONDecoder()
+    
+    decoder.keyDecodingStrategy = .custom(mappingKeys)
+    
     let agentryMapping = try decoder.decode(AgentryMapping.self, from: data)
     
-    print(">>> it = \(agentryMapping.integrationType)")
-    print(">>> ide = \(agentryMapping.integrationDataExchange)")
-    
-    print(">>> im.ao = \(agentryMapping.integrationMetadata.agentryObject)")
-    
-    let fv = resolveFieldValues(fields: agentryMapping.integrationDataMapping.fields)
+    let fv = try resolveFieldValues(fields: agentryMapping.integrationDataMapping.fields)
     
     let encoded = try JSONSerialization.data(withJSONObject: fv, options: .prettyPrinted)
     
