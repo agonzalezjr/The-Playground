@@ -98,15 +98,22 @@ enum FieldType : String, Codable {
 }
 
 enum IntegrationPathDirective : String, Codable {
+    case MAIN
+    case PARENT
+    case FIRST
     case LAST
 }
 
-struct IntegrationPathComponent : Codable {
+struct IntegrationPathElement : Codable {
+    
+    // #andytodo: Try the inner enum solution
+    
     let propertyName: String?
     let collectionIndex: Int?
     let agentryValue: String?
     let pathDirective: IntegrationPathDirective?
     
+    // #andytodo: See if we can remove this mapping
     enum CodingKeys: String, CodingKey {
         case propertyName = "property-name"
         case collectionIndex = "collection-index"
@@ -115,9 +122,12 @@ struct IntegrationPathComponent : Codable {
     }
 }
 
-struct IntegrationConcatenationComponent : Codable {
+typealias IntegrationPath = [IntegrationPathElement]
+
+struct IntegrationConcatenationElement : Codable {
+    
     let contatenationString: String?
-    let integrationPath: [IntegrationPathComponent]?
+    let integrationPath: IntegrationPath?
     
     enum CodingKeys: String, CodingKey {
         case contatenationString = "concatenation-string"
@@ -125,11 +135,16 @@ struct IntegrationConcatenationComponent : Codable {
     }
 }
 
+typealias IntegrationConcatenation = [IntegrationConcatenationElement]
+
 struct Field : Codable {
+    
     let type: FieldType
+    
     let fields: [String: Field]? // if it's a "group"
-    let integrationPath: [IntegrationPathComponent]? // if there is an integration
-    let integrationConcatenation: [IntegrationConcatenationComponent]? // if there are multiple integrations
+    
+    let integrationPath: IntegrationPath? // if there is an integration
+    let integrationConcatenation: IntegrationConcatenation? // if there are multiple integrations
     
     enum CodingKeys: String, CodingKey {
         case type
@@ -165,7 +180,7 @@ enum AgentryDataMappingError: Error {
 }
 
 // #andytodo : return type here might not be a string!
-func resolveIntegrationPath(integrationPath: [IntegrationPathComponent]) -> String {
+func resolveIntegrationPath(integrationPath: IntegrationPath) -> String {
     return integrationPath.reduce("") { value, ipc in
         var newTerm = ""
         if let collIndex = ipc.collectionIndex {
@@ -181,7 +196,7 @@ func resolveIntegrationPath(integrationPath: [IntegrationPathComponent]) -> Stri
     }
 }
 
-func resolveIntegrationConcatenation(integrationConcatenation: [IntegrationConcatenationComponent]) -> String {
+func resolveIntegrationConcatenation(integrationConcatenation: IntegrationConcatenation) -> String {
     return integrationConcatenation.reduce("") { value, icc in
         var newTerm = ""
         if let concatenationString = icc.contatenationString {
