@@ -132,6 +132,14 @@ struct Field : Codable {
     
     let integrationPath: IntegrationPath? // if there is an integration
     let integrationConcatenation: IntegrationConcatenation? // if there are multiple integrations
+    
+    init(from decoder: Decoder) throws {
+        type = .group
+        
+        fields = [:]
+        integrationPath = nil
+        integrationConcatenation = nil
+    }
 }
 
 struct IntegrationDataMapping : Codable {
